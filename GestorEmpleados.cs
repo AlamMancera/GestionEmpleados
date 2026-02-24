@@ -19,6 +19,15 @@ namespace GestionEmpleados
         // Agregar empleado
         public static void AgregarEmpleado(Empleado empleado)
         {
+            // Validar que no exista un empleado con el mismo RFC o NSS
+            if (ExisteEmpleadoConRfc(empleado.Rfc))
+            {
+                throw new InvalidOperationException($"Ya existe un empleado con el RFC {empleado.Rfc}");
+            }
+            if (ExisteEmpleadoConNss(empleado.Nss))
+            {
+                throw new InvalidOperationException($"Ya existe un empleado con el NSS {empleado.Nss}");
+            }
             _empleados.Add(empleado);
         }
 
@@ -147,6 +156,29 @@ namespace GestionEmpleados
             }
             promedio = nomina / _empleados.Count;
         }
+
+        public static bool ExisteEmpleadoConRfc(string rfc)
+        {
+            foreach (Empleado empleado in _empleados)
+            {
+                if (empleado.Rfc == rfc)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool ExisteEmpleadoConNss(string nss)
+        {
+            foreach (Empleado empleado in _empleados)
+            {
+                if (empleado.Nss == nss)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
-

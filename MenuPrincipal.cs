@@ -111,14 +111,24 @@ namespace GestionEmpleados
 
         private void AgregarEmpleado()
         {
-            Console.Clear();
-            Console.WriteLine("AGREGAR NUEVO EMPLEADO\n");
+            MostrarTitulo("AGREGAR NUEVO EMPLEADO");
 
             // Leemos y validamos cada campo necesario
             string nombre = LeerYValidarCampo("Nombre: ", CampoEmpleado.Nombre);
             string email = LeerYValidarCampo("Email: ", CampoEmpleado.Email);
             string rfc = LeerYValidarCampo("RFC: ", CampoEmpleado.Rfc);
+            // Para el NSS y RFC, además de validar el formato, también validamos que no existan ya en el sistema (ya que deben ser únicos)
+            while (GestorEmpleados.ExisteEmpleadoConRfc(rfc))
+            {
+                Console.WriteLine($"\nError: Ya existe un empleado registrado con el RFC: '{rfc}'. Intente de nuevo!");
+                rfc = LeerYValidarCampo("RFC: ", CampoEmpleado.Rfc);
+            }
             string nss = LeerYValidarCampo("NSS: ", CampoEmpleado.Nss);
+            while (GestorEmpleados.ExisteEmpleadoConNss(nss))
+            {
+                Console.WriteLine($"\nError: Ya existe un empleado registrado con el NSS: '{nss}'. Intente de nuevo!");
+                nss = LeerYValidarCampo("NSS: ", CampoEmpleado.Nss);
+            }
             decimal salario = LeerYValidarSalario();
 
             // Ya que tenemos todos los datos del empleado, lo creamos usando el constructor
@@ -214,8 +224,7 @@ namespace GestionEmpleados
 
         private void ListarEmpleados()
         {
-            Console.Clear();
-            Console.WriteLine("LISTADO DE EMPLEADOS\n");
+            MostrarTitulo("LISTA DE EMPLEADOS");
 
             // Lista local para almacenar los empleados obtenidos del gestor
             List<Empleado> empleados = GestorEmpleados.ObtenerTodos();
@@ -228,28 +237,13 @@ namespace GestionEmpleados
 
         private void BuscarPorId()
         {
-            Console.Clear();
-            Console.WriteLine("BUSCAR EMPLEADO POR ID\n");
+            MostrarTitulo("BUSCAR EMPLEADO POR ID");
 
-            Console.Write("Ingresa el ID: ");
-            string idTexto = Console.ReadLine() ?? "";
+            Empleado? empleado = SolicitarEmpleadoPorId();
 
-            if (int.TryParse(idTexto, out int id))
+            if (empleado != null)
             {
-                Empleado? empleado = GestorEmpleados.BuscarPorId(id);
-
-                if (empleado != null)
-                {
-                    Console.WriteLine("\n" + empleado);
-                }
-                else
-                {
-                    Console.WriteLine($"No se encontró empleado con ID {id}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error: El ID debe ser un número válido.");
+                Console.WriteLine("\n" + empleado);
             }
 
             EsperarTecla();
@@ -257,8 +251,7 @@ namespace GestionEmpleados
 
         private void BuscarPorNombre()
         {
-            Console.Clear();
-            Console.WriteLine("BUSCAR EMPLEADO POR NOMBRE\n");
+            MostrarTitulo("BUSCAR EMPLEADO POR NOMBRE");
 
             Console.Write("Ingresa el nombre (o parte de este): ");
             string nombre = Console.ReadLine() ?? "";
@@ -273,8 +266,7 @@ namespace GestionEmpleados
 
         private void VerActivos()
         {
-            Console.Clear();
-            Console.WriteLine("EMPLEADOS ACTIVOS\n");
+            MostrarTitulo("EMPLEADOS ACTIVOS");
 
             List<Empleado> activos = GestorEmpleados.ObtenerActivos();
 
@@ -285,8 +277,7 @@ namespace GestionEmpleados
 
         private void VerInactivos()
         {
-            Console.Clear();
-            Console.WriteLine("EMPLEADOS INACTIVOS\n");
+            MostrarTitulo("EMPLEADOS INACTIVOS");
 
             List<Empleado> inactivos = GestorEmpleados.ObtenerInactivos();
             MostrarLista(inactivos);
@@ -296,108 +287,77 @@ namespace GestionEmpleados
 
         private void AplicarAumento()
         {
-            Console.Clear();
-            Console.WriteLine("APLICAR AUMENTO SALARIAL\n");
+            MostrarTitulo("APLICAR AUMENTO SALARIAL");
 
-            Console.Write("Ingresa el ID del empleado: ");
-            string idTexto = Console.ReadLine() ?? "";
+            Empleado? empleado = SolicitarEmpleadoPorId();
 
-            if (int.TryParse(idTexto, out int id))
+            if (empleado != null)
             {
-                Empleado? empleado = GestorEmpleados.BuscarPorId(id);
+                Console.Write($"Salario actual de {empleado.Nombre}: {empleado.Salario:C}. \nIngresa el % de aumento: ");
+                string porcentajeTexto = Console.ReadLine() ?? "";
 
-                if (empleado != null)
+                if (decimal.TryParse(porcentajeTexto, out decimal porcentaje))
                 {
-                    Console.Write($"Salario actual de {empleado.Nombre}: {empleado.Salario:C}. \nIngresa el % de aumento: ");
-                    string porcentajeTexto = Console.ReadLine() ?? "";
-
-                    if (decimal.TryParse(porcentajeTexto, out decimal porcentaje))
+                    try
                     {
-                        try
-                        {
-                            empleado.AplicarAumento(porcentaje);
-                            Console.WriteLine($"¡Éxito! Nuevo salario: {empleado.Salario:C}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error: {ex.Message}");
-                        }
+                        empleado.AplicarAumento(porcentaje);
+                        Console.WriteLine($"¡Éxito! Nuevo salario: {empleado.Salario:C}");
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Console.WriteLine("\nError: El porcentaje debe ser un número válido.");
+                        Console.WriteLine($"Error: {ex.Message}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Empleado no encontrado.");
+                    Console.WriteLine("\nError: El porcentaje debe ser un número válido.");
                 }
-            }
-            else
-            {
-                Console.WriteLine("\nError: El ID debe ser un número válido.");
             }
             EsperarTecla();
         }
 
         private void GestionarEstado()
         {
-            Console.Clear();
-            Console.WriteLine("GESTIÓN DE ESTADO (REACTIVAR/SUSPENDER)\n");
+            MostrarTitulo("GESTIÓN DE ESTADO (REACTIVAR/SUSPENDER)\n");
 
-            Console.Write("Ingresa el ID del empleado: ");
-            string idTexto = Console.ReadLine() ?? "";
+            Empleado? empleado = SolicitarEmpleadoPorId();
 
-            if (int.TryParse(idTexto, out int id))
+            if (empleado != null)
             {
-                Empleado? empleado = GestorEmpleados.BuscarPorId(id);
+                Console.WriteLine($"Empleado: {empleado.Nombre} | Estado actual: {empleado.Estado}\n");
+                Console.WriteLine("1. Suspender | 2. Reactivar");
 
-                if (empleado != null)
+                Console.Write("Selecciona una opción: ");
+                string opcion = Console.ReadLine() ?? "";
+
+                try
                 {
-                    Console.WriteLine($"Empleado: {empleado.Nombre} | Estado actual: {empleado.Estado}\n");
-                    Console.WriteLine("1. Suspender | 2. Reactivar");
-
-                    Console.Write("Selecciona una opción: ");
-                    string opcion = Console.ReadLine() ?? "";
-
-                    try
+                    switch (opcion)
                     {
-                        switch (opcion)
-                        {
-                            case "1":
-                                empleado.Suspender();
-                                break;
-                            case "2":
-                                empleado.Reactivar();
-                                break;
-                            default:
-                                Console.WriteLine("\nOpción inválida. No se realizaron cambios.");
-                                EsperarTecla();
-                                return;
-                        }
-                        Console.WriteLine($"Estado actualizado a: {empleado.Estado}");
+                        case "1":
+                            empleado.Suspender();
+                            break;
+                        case "2":
+                            empleado.Reactivar();
+                            break;
+                        default:
+                            Console.WriteLine("\nOpción inválida. No se realizaron cambios.");
+                            EsperarTecla();
+                            return;
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"{ex.Message}");
-                    }
+                    Console.WriteLine($"Estado actualizado a: {empleado.Estado}");
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Empleado no encontrado.");
+                    Console.WriteLine($"{ex.Message}");
                 }
-            }
-            else
-            {
-                Console.WriteLine("\nError: El ID debe ser un número válido.");
             }
             EsperarTecla();
         }
 
         private void MostrarEstadisticasNomina()
         {
-            Console.Clear();
-            Console.WriteLine("REPORTE GENERAL DE NÓMINA\n");
+            MostrarTitulo("ESTADÍSTICAS GENERALES DE NÓMINA");
 
             decimal totalNomina = GestorEmpleados.CalcularNominaActivos();
 
@@ -415,9 +375,22 @@ namespace GestionEmpleados
 
         private void GenerarReporte()
         {
-            Console.Clear();
-            Console.WriteLine("GENERAR REPORTE DE EMPLEADO\n");
+            MostrarTitulo("GENERAR REPORTE DE EMPLEADO");
 
+            Empleado? empleado = SolicitarEmpleadoPorId();
+
+            if (empleado != null)
+            {
+                ReporteEmpleado reporte = empleado.GenerarReporte();
+                Console.WriteLine();
+                Console.WriteLine(reporte.GenerarReporte());
+
+            }
+            EsperarTecla();
+        }
+
+        private Empleado? SolicitarEmpleadoPorId()
+        {
             Console.Write("Ingresa el ID del empleado: ");
             string idTexto = Console.ReadLine() ?? "";
 
@@ -427,21 +400,18 @@ namespace GestionEmpleados
 
                 if (empleado != null)
                 {
-                    ReporteEmpleado reporte = empleado.GenerarReporte();
-                    Console.WriteLine();
-                    Console.WriteLine(reporte.GenerarReporte());
-
+                    return empleado;
                 }
                 else
                 {
-                    Console.WriteLine($"No se encontró empleado con ID {id}");
+                    Console.WriteLine($"\nNo se encontró empleado con ID {id}");
                 }
             }
             else
             {
-                Console.WriteLine("Error: El ID debe ser un número válido.");
+                Console.WriteLine("\nError: El ID debe ser un número válido.");
             }
-            EsperarTecla();
+            return null; // Si algo falla, devolvemos null
         }
 
         private void Salir()
@@ -455,6 +425,12 @@ namespace GestionEmpleados
         {
             Console.Write("\nPresiona cualquier tecla para continuar...");
             Console.ReadKey();
+        }
+
+        private void MostrarTitulo(string titulo)
+        {
+            Console.Clear();
+            Console.WriteLine($"=== {titulo} ===\n");
         }
     }
 
